@@ -35,10 +35,10 @@ static int v4l2_request_mpeg2_start_frame(AVCodecContext *avctx,
                                           av_unused uint32_t size)
 {
     const MpegEncContext *s = avctx->priv_data;
-    V4L2RequestControlsMPEG2 *controls = s->cur_pic.ptr->hwaccel_picture_private;
+    V4L2RequestControlsMPEG2 *controls = s->current_picture_ptr->hwaccel_picture_private;
     int ret;
 
-    ret = ff_v4l2_request_start_frame(avctx, &controls->pic, s->cur_pic.ptr->f);
+    ret = ff_v4l2_request_start_frame(avctx, &controls->pic, s->current_picture_ptr->f);
     if (ret)
         return ret;
 
@@ -95,14 +95,12 @@ static int v4l2_request_mpeg2_start_frame(AVCodecContext *avctx,
 
     switch (s->pict_type) {
     case AV_PICTURE_TYPE_B:
-        if (s->next_pic.ptr)
-            controls->picture.backward_ref_ts =
-                ff_v4l2_request_get_capture_timestamp(s->next_pic.ptr->f);
+        controls->picture.backward_ref_ts =
+            ff_v4l2_request_get_capture_timestamp(s->next_picture.f);
         // fall-through
     case AV_PICTURE_TYPE_P:
-        if (s->last_pic.ptr)
-            controls->picture.forward_ref_ts =
-                ff_v4l2_request_get_capture_timestamp(s->last_pic.ptr->f);
+        controls->picture.forward_ref_ts =
+            ff_v4l2_request_get_capture_timestamp(s->last_picture.f);
     }
 
     for (int i = 0; i < 64; i++) {
@@ -120,7 +118,7 @@ static int v4l2_request_mpeg2_decode_slice(AVCodecContext *avctx,
                                            const uint8_t *buffer, uint32_t size)
 {
     const MpegEncContext *s = avctx->priv_data;
-    V4L2RequestControlsMPEG2 *controls = s->cur_pic.ptr->hwaccel_picture_private;
+    V4L2RequestControlsMPEG2 *controls = s->current_picture_ptr->hwaccel_picture_private;
 
     return ff_v4l2_request_append_output(avctx, &controls->pic, buffer, size);
 }
@@ -128,7 +126,7 @@ static int v4l2_request_mpeg2_decode_slice(AVCodecContext *avctx,
 static int v4l2_request_mpeg2_end_frame(AVCodecContext *avctx)
 {
     const MpegEncContext *s = avctx->priv_data;
-    V4L2RequestControlsMPEG2 *controls = s->cur_pic.ptr->hwaccel_picture_private;
+    V4L2RequestControlsMPEG2 *controls = s->current_picture_ptr->hwaccel_picture_private;
 
     struct v4l2_ext_control control[] = {
         {
